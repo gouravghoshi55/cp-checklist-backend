@@ -23,7 +23,9 @@ if (process.env.NODE_ENV === "production") {
   });
 }
 
-// ─── Start ───────────────────────────────────────────────────────────────────
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+app.get("/", (req, res) => {
+  res.send("Backend is running 🚀");
 });
+
+// ─── Start ───────────────────────────────────────────────────────────────────
+module.exports = app;
