@@ -120,13 +120,46 @@ function parseSheetDate(dateStr) {
     return new Date(parseInt(yyyy), parseInt(mm) - 1, parseInt(dd));
   }
 
-  // Format: "YYYY-MM-DD" or "YYYY-MM-DDTHH:MM:SS"
-  const isoMatch = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (isoMatch) {
-    return new Date(str);
+  // Format: "28 Apr 2026, 00:00:00" or "28 Apr 2026"
+  const months = {
+    Jan: 0,
+    Feb: 1,
+    Mar: 2,
+    Apr: 3,
+    May: 4,
+    Jun: 5,
+    Jul: 6,
+    Aug: 7,
+    Sep: 8,
+    Oct: 9,
+    Nov: 10,
+    Dec: 11,
+  };
+  const textMatch = str.match(/^(\d{1,2})\s+(\w{3})\s+(\d{4})/);
+  if (textMatch) {
+    const [, dd, mon, yyyy] = textMatch;
+    const timeMatch = str.match(/(\d{2}):(\d{2}):(\d{2})/);
+    if (timeMatch) {
+      return new Date(
+        parseInt(yyyy),
+        months[mon],
+        parseInt(dd),
+        parseInt(timeMatch[1]),
+        parseInt(timeMatch[2]),
+        parseInt(timeMatch[3]),
+      );
+    }
+    return new Date(parseInt(yyyy), months[mon], parseInt(dd));
   }
 
-  // Format: "Mon DD, YYYY" or "DD Mon YYYY"
+  // Format: "YYYY-MM-DD" or ISO
+  const isoMatch = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (isoMatch) {
+    const [, yyyy, mm, dd] = isoMatch;
+    return new Date(parseInt(yyyy), parseInt(mm) - 1, parseInt(dd));
+  }
+
+  // Fallback
   const d = new Date(str);
   return isNaN(d.getTime()) ? null : d;
 }
