@@ -17,7 +17,9 @@ router.get("/leads", async (req, res) => {
     // Filter by Channel Partner (Task column)
     if (cp && cp.trim()) {
       data = data.filter(
-        (row) => row["Task"] && row["Task"].trim().toLowerCase() === cp.trim().toLowerCase()
+        (row) =>
+          row["Task"] &&
+          row["Task"].trim().toLowerCase() === cp.trim().toLowerCase(),
       );
     }
 
@@ -37,7 +39,7 @@ router.get("/leads", async (req, res) => {
       taskId: row["Task ID"] || "",
       name: row["Name"] || "",
       planned: row["Planned"] || "",
-      task: row["Task"] || "",        // Channel Partner Name
+      task: row["Task"] || "", // Channel Partner Name
       freq: row["Freq"] || "",
       phoneNumber: row["Phone Number"] || "",
       status: row["Status"] || "",
@@ -60,7 +62,9 @@ router.post("/leads/done", async (req, res) => {
   try {
     const { taskId, remark, leadDetails } = req.body;
     if (!taskId) {
-      return res.status(400).json({ success: false, error: "taskId is required" });
+      return res
+        .status(400)
+        .json({ success: false, error: "taskId is required" });
     }
 
     const result = await markLeadDone({ taskId, remark, leadDetails });
@@ -94,21 +98,35 @@ function parseSheetDate(dateStr) {
   const str = dateStr.trim();
 
   // Format: "DD/MM/YYYY HH:MM:SS"
-  const slashMatch = str.match(/^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2}):(\d{2})$/);
+  const slashMatch = str.match(
+    /^(\d{1,2})\/(\d{1,2})\/(\d{4})\s*(\d{2}):(\d{2}):(\d{2})$/,
+  );
   if (slashMatch) {
     const [, dd, mm, yyyy, hh, min, ss] = slashMatch;
-    return new Date(yyyy, mm - 1, dd, hh, min, ss);
+    return new Date(
+      parseInt(yyyy),
+      parseInt(mm) - 1,
+      parseInt(dd),
+      parseInt(hh),
+      parseInt(min),
+      parseInt(ss),
+    );
   }
 
-  // Format: "28 Apr 2026, 00:00:00"
-  const textMatch = str.match(/^(\d{1,2})\s+(\w{3})\s+(\d{4}),?\s+(\d{2}):(\d{2}):(\d{2})$/);
-  if (textMatch) {
-    const months = { Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5, Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11 };
-    const [, dd, mon, yyyy, hh, min, ss] = textMatch;
-    return new Date(yyyy, months[mon], dd, hh, min, ss);
+  // Format: "DD/MM/YYYY"
+  const slashShort = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (slashShort) {
+    const [, dd, mm, yyyy] = slashShort;
+    return new Date(parseInt(yyyy), parseInt(mm) - 1, parseInt(dd));
   }
 
-  // Fallback: let JS try to parse it
+  // Format: "YYYY-MM-DD" or "YYYY-MM-DDTHH:MM:SS"
+  const isoMatch = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (isoMatch) {
+    return new Date(str);
+  }
+
+  // Format: "Mon DD, YYYY" or "DD Mon YYYY"
   const d = new Date(str);
   return isNaN(d.getTime()) ? null : d;
 }

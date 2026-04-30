@@ -30,7 +30,7 @@ async function getSheetData(sheetName) {
     );
     const res = await sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
-      range: `'${sheetName}'!A1:Z1000`,
+      range: `${sheetName}`,
     });
     const rows = res.data.values || [];
     if (rows.length < 2) return { headers: rows[0] || [], data: [] };
