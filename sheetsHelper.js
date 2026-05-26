@@ -85,10 +85,10 @@ async function markLeadDone({ taskId, remark, leadDetails }) {
     throw new Error(`Task ID ${taskId} not found in Master sheet`);
   }
 
-  const rowIndex = row._rowIndex; // actual sheet row number
+  const rowIndex = row._rowIndex;
   const now = formatTimestamp(new Date());
 
-  // Find column indices (0-based) for Actual and Status
+  // Update Master sheet (same as before)
   const actualColIdx = headers.indexOf("Actual");
   const statusColIdx = headers.indexOf("Status");
 
@@ -98,7 +98,6 @@ async function markLeadDone({ taskId, remark, leadDetails }) {
     );
   }
 
-  // Build batch update for Master row
   const colLetter = (idx) => String.fromCharCode(65 + idx);
 
   await sheets.spreadsheets.values.batchUpdate({
@@ -118,12 +117,22 @@ async function markLeadDone({ taskId, remark, leadDetails }) {
     },
   });
 
-  // Step 2: Append to Consolidated sheet
-  // Consolidated columns: Task id | Timestamp | Remark | Any lead details | Status | Channel Partner Name
-  const cpName = row["Task"] || ""; // "Task" column in Master = Channel Partner Name
-  await sheets.spreadsheets.values.append({
+  // ✅ Step 2: Manual Append to Consolidated
+  // Pehle check karo kitni rows hain
+  const consolidatedRes = await sheets.spreadsheets.values.get({
     spreadsheetId: SPREADSHEET_ID,
-    range: `${process.env.CONSOLIDATED_SHEET}!A:F`,
+    range: process.env.CONSOLIDATED_SHEET, // Sirf sheet name
+  });
+
+  const existingRows = consolidatedRes.data.values || [];
+  const nextRow = existingRows.length + 1; // Next empty row number
+
+  const cpName = row["Task"] || "";
+
+  // Specific row mein update karo (append effect ke liye)
+  await sheets.spreadsheets.values.update({
+    spreadsheetId: SPREADSHEET_ID,
+    range: `${process.env.CONSOLIDATED_SHEET}!A${nextRow}:F${nextRow}`,
     valueInputOption: "USER_ENTERED",
     requestBody: {
       values: [[taskId, now, remark || "", leadDetails || "", "Done", cpName]],
